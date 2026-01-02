@@ -79,3 +79,68 @@ class MQTTClient:
             self.pid += 1
             self.sock.write(struct.pack("!H", self.pid))
         self.sock.write(msg)
+
+    def _recv_len(self):
+        n = 0
+        sh = 0
+        while 1:
+            b = self.sock.read(1)[0]
+            n |= (b & 0x7F) << sh
+            if not b & 0x80:
+                return n
+            sh += 7
+
+    def subscribe(self, topic, qos=0):
+        self.pid += 1
+        pkt = bytearray(b"\x82\0\0\0")
+        sz = 2 + 2 + len(topic) + 1
+        i = 1
+        while sz > 0x7F:
+            pkt[i] = (sz & 0x7F) | 0x80
+            sz >>= 7
+            i += 1
+        pkt[i] = sz
+        self.sock.write(pkt[:i + 1])
+        self.sock.write(struct.pack("!H", self.pid))
+        self._send_str(topic)
+        self.sock.write(struct.pack("B", qos))
+        while 1:
+            op = self.wait_msg()
+            if op == 0x90:
+                resp = self.sock.read(4)
+                return
+
+    def wait_msg(self):
+        res = self.sock.read(1)
+        self.sock.setblocking(True)
+        if res is None:
+            return None
+        if res == b"":
+            raise OSError(-1)
+        if res == b"\xd0":  # PINGRESP
+            sz = self.sock.read(1)[0]
+            return None
+        op = res[0]
+        if op & 0xF0 != 0x30:
+            return op
+        sz = self._recv_len()
+        topic_len = self.sock.read(2)
+        topic_len = (topic_len[0] << 8) | topic_len[1]
+        topic = self.sock.read(topic_len)
+        sz -= topic_len + 2
+        if op & 6:
+            pid = self.sock.read(2)
+            pid = pid[0] << 8 | pid[1]
+            sz -= 2
+        msg = self.sock.read(sz)
+        if hasattr(self, "cb"):
+            self.cb(topic, msg)
+        if op & 6 == 2:
+            pkt = bytearray(b"\x40\x02\0\0")
+            struct.pack_into("!H", pkt, 2, pid)
+            self.sock.write(pkt)
+        return op
+
+    def check_msg(self):
+        self.sock.setblocking(False)
+        return self.wait_msg()

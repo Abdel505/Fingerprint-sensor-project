@@ -7,53 +7,291 @@
         "info": ""
     },
     {
-        "id": "5ddfcdf9a95c397c",
-        "type": "subflow",
-        "name": "Subflow 1",
-        "info": "",
-        "in": [],
-        "out": []
+        "id": "mqtt_alert_in",
+        "type": "mqtt in",
+        "z": "alert_flow_1",
+        "name": "Detection Status",
+        "topic": "abdel_project_9Xs9/security/detection",
+        "qos": "1",
+        "datatype": "auto",
+        "broker": "3021d6b6f3f5d4d1",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 220,
+        "y": 80,
+        "wires": [
+            [
+                "debug_alert",
+                "ui_alert_text"
+            ]
+        ]
     },
     {
-        "id": "8c3168026b518bcb",
-        "type": "ui_tab",
-        "name": "SMART DOOR",
-        "icon": "dashboard",
+        "id": "ui_alert_text",
+        "type": "ui_text",
+        "z": "alert_flow_1",
+        "group": "b94556d0f1053844",
         "order": 1,
-        "disabled": false,
-        "hidden": false
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Detection Alert",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": "",
+        "color": "#000000",
+        "x": 500,
+        "y": 40,
+        "wires": []
     },
     {
-        "id": "5316a93164cdcaab",
-        "type": "ui_group",
-        "name": "Climate",
-        "tab": "8c3168026b518bcb",
+        "id": "debug_alert",
+        "type": "debug",
+        "z": "alert_flow_1",
+        "name": "View Raw Msg",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 500,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "ed53dad064f34eef",
+        "type": "mqtt in",
+        "z": "alert_flow_1",
+        "name": "Access Status",
+        "topic": "abdel_project_9Xs9/security/access",
+        "qos": "1",
+        "datatype": "auto",
+        "broker": "3021d6b6f3f5d4d1",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 210,
+        "y": 200,
+        "wires": [
+            [
+                "fedb8cc424d34552",
+                "9d3fd9614072bbc3"
+            ]
+        ]
+    },
+    {
+        "id": "fedb8cc424d34552",
+        "type": "ui_text",
+        "z": "alert_flow_1",
+        "group": "b94556d0f1053844",
         "order": 1,
-        "disp": true,
-        "width": 12,
-        "collapse": false,
-        "className": ""
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Access Alert",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": "",
+        "color": "#000000",
+        "x": 450,
+        "y": 240,
+        "wires": []
     },
     {
-        "id": "53d0edbda762feb5",
-        "type": "ui_group",
-        "name": "Access control",
-        "tab": "8c3168026b518bcb",
+        "id": "9d3fd9614072bbc3",
+        "type": "debug",
+        "z": "alert_flow_1",
+        "name": "View Raw Msg",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 460,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "70e7d34b53ca8cc9",
+        "type": "debug",
+        "z": "alert_flow_1",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 460,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "8e22328af7813ce8",
+        "type": "mqtt out",
+        "z": "alert_flow_1",
+        "name": "",
+        "topic": "abdel_project_9Xs9/security/commands",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "3021d6b6f3f5d4d1",
+        "x": 540,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "beda97a27fca6e65",
+        "type": "ui_button",
+        "z": "alert_flow_1",
+        "name": "",
+        "group": "b94556d0f1053844",
         "order": 2,
-        "disp": true,
-        "width": 10,
-        "collapse": true,
-        "className": ""
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Remote Unlock",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "OPEN_DOOR",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 220,
+        "y": 380,
+        "wires": [
+            [
+                "8e22328af7813ce8"
+            ]
+        ]
+    },
+    {
+        "id": "59dcdbe80dfa7f78",
+        "type": "ui_switch",
+        "z": "alert_flow_1",
+        "name": "",
+        "label": "Panic Mode",
+        "tooltip": "",
+        "group": "b94556d0f1053844",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "decouple": "false",
+        "topic": "abdel_project_9Xs9/security/commands",
+        "topicType": "msg",
+        "style": "",
+        "onvalue": "ALARM_ON",
+        "onvalueType": "str",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "ALARM_OFF",
+        "offvalueType": "str",
+        "officon": "",
+        "offcolor": "",
+        "animate": false,
+        "className": "",
+        "x": 250,
+        "y": 460,
+        "wires": [
+            [
+                "8e22328af7813ce8"
+            ]
+        ]
+    },
+    {
+        "id": "c5ede34d209aa877",
+        "type": "mqtt in",
+        "z": "alert_flow_1",
+        "name": "Door State",
+        "topic": "abdel_project_9Xs9/security/door",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "3021d6b6f3f5d4d1",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 260,
+        "y": 540,
+        "wires": [
+            [
+                "2f8a8e5b167d22fd",
+                "e7614efa031fd0da"
+            ]
+        ]
+    },
+    {
+        "id": "2f8a8e5b167d22fd",
+        "type": "ui_text",
+        "z": "alert_flow_1",
+        "group": "b94556d0f1053844",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Door State",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": "",
+        "color": "#000000",
+        "x": 490,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "e7614efa031fd0da",
+        "type": "debug",
+        "z": "alert_flow_1",
+        "name": "View Raw Msg",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 480,
+        "y": 560,
+        "wires": []
     },
     {
         "id": "3021d6b6f3f5d4d1",
         "type": "mqtt-broker",
         "name": "",
         "broker": "broker.hivemq.com",
-        "port": 1883,
+        "port": "8883",
+        "tls": "",
         "clientid": "",
         "autoConnect": true,
-        "usetls": false,
+        "usetls": true,
         "protocolVersion": 4,
         "keepalive": 60,
         "cleansession": true,
@@ -77,120 +315,6 @@
         "sessionExpiry": ""
     },
     {
-        "id": "57b82e7e17d94e59",
-        "type": "ui_base",
-        "theme": {
-            "name": "theme-dark",
-            "lightTheme": {
-                "default": "#0094CE",
-                "baseColor": "#2c2f30",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": true,
-                "reset": false
-            },
-            "darkTheme": {
-                "default": "#097479",
-                "baseColor": "#929054",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": true,
-                "reset": false
-            },
-            "customTheme": {
-                "name": "Untitled Theme 1",
-                "default": "#4B7930",
-                "baseColor": "#4B7930",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
-            },
-            "themeState": {
-                "base-color": {
-                    "default": "#097479",
-                    "value": "#929054",
-                    "edited": true
-                },
-                "page-titlebar-backgroundColor": {
-                    "value": "#929054",
-                    "edited": false
-                },
-                "page-backgroundColor": {
-                    "value": "#111111",
-                    "edited": false
-                },
-                "page-sidebar-backgroundColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "group-textColor": {
-                    "value": "#b5b37e",
-                    "edited": false
-                },
-                "group-borderColor": {
-                    "value": "#555555",
-                    "edited": false
-                },
-                "group-backgroundColor": {
-                    "value": "#333333",
-                    "edited": false
-                },
-                "widget-textColor": {
-                    "value": "#eeeeee",
-                    "edited": false
-                },
-                "widget-backgroundColor": {
-                    "value": "#929054",
-                    "edited": false
-                },
-                "widget-borderColor": {
-                    "value": "#333333",
-                    "edited": false
-                },
-                "base-font": {
-                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
-                }
-            },
-            "angularTheme": {
-                "primary": "indigo",
-                "accents": "blue",
-                "warn": "red",
-                "background": "grey",
-                "palette": "light"
-            }
-        },
-        "site": {
-            "name": "Node-RED Dashboard",
-            "hideToolbar": "false",
-            "allowSwipe": "false",
-            "lockMenu": "false",
-            "allowTempTheme": "true",
-            "dateFormat": "DD/MM/YYYY",
-            "sizes": {
-                "sx": 48,
-                "sy": 48,
-                "gx": 6,
-                "gy": 6,
-                "cx": 6,
-                "cy": 6,
-                "px": 0,
-                "py": 0
-            }
-        }
-    },
-    {
-        "id": "7038c45d56487ad5",
-        "type": "global-config",
-        "env": [],
-        "modules": {
-            "node-red-dashboard": "3.6.6"
-        }
-    },
-    {
-        "id": "b2db5dcaad503de7",
-        "type": "ui_tab",
-        "name": "Home",
-        "icon": "dashboard",
-        "disabled": false,
-        "hidden": false
-    },
-    {
         "id": "b94556d0f1053844",
         "type": "ui_group",
         "name": "Status",
@@ -202,99 +326,19 @@
         "className": ""
     },
     {
-        "id": "mqtt_alert_in",
-        "type": "mqtt in",
-        "z": "alert_flow_1",
-        "name": "",
-        "topic": "abdel_project_9Xs9/security/alerts",
-        "qos": "1",
-        "datatype": "auto",
-        "broker": "3021d6b6f3f5d4d1",
-        "nl": false,
-        "rap": true,
-        "rh": 0,
-        "inputs": 0,
-        "x": 220,
-        "y": 160,
-        "wires": [
-            [
-                "debug_alert",
-                "ui_alert_text",
-                "ui_alert_toast"
-            ]
-        ]
+        "id": "b2db5dcaad503de7",
+        "type": "ui_tab",
+        "name": "Home",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
     },
     {
-        "id": "ui_alert_text",
-        "type": "ui_text",
-        "z": "alert_flow_1",
-        "group": "b94556d0f1053844",
-        "order": 1,
-        "width": 0,
-        "height": 0,
-        "name": "",
-        "label": "Latest Security Alert",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": "",
-        "color": "#000000",
-        "x": 520,
-        "y": 160,
-        "wires": []
-    },
-    {
-        "id": "ui_alert_toast",
-        "type": "ui_toast",
-        "z": "alert_flow_1",
-        "position": "top right",
-        "displayTime": "5",
-        "highlight": "red",
-        "sendall": true,
-        "outputs": 0,
-        "ok": "OK",
-        "cancel": "",
-        "raw": false,
-        "className": "",
-        "topic": "Security Alert!",
-        "name": "",
-        "x": 510,
-        "y": 220,
-        "wires": []
-    },
-    {
-        "id": "debug_alert",
-        "type": "debug",
-        "z": "alert_flow_1",
-        "name": "View Raw Msg",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 480,
-        "y": 100,
-        "wires": []
-    },
-    {
-        "id": "7455fd20639c2994",
-        "type": "debug",
-        "z": "alert_flow_1",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 480,
-        "y": 40,
-        "wires": []
+        "id": "a43e280378d67a85",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-dashboard": "3.6.6"
+        }
     }
 ]

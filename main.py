@@ -7,7 +7,6 @@ try:
 except ImportError:
     import ssl
     sys.modules['ussl'] = ssl
-
 import lib.ssd1306 as ssd1306
 import lib.fingerprint as fingerprint
 from lib.mqtt import MQTTClient # Requires mqtt.py file
@@ -17,6 +16,8 @@ from config import secrets
 MQTT_TOPIC = "abdel_project_9Xs9/security/alerts"
 TOPIC_DETECTION = "abdel_project_9Xs9/security/detection"
 TOPIC_ACCESS = "abdel_project_9Xs9/security/access"
+TOPIC_COMMANDS = "abdel_project_9Xs9/security/commands"
+TOPIC_DOOR_STATUS = "abdel_project_9Xs9/security/door"
 
 # --- HARDWARE CONFIGURATION ---
 led_green = Pin(4, Pin.OUT)
@@ -57,6 +58,37 @@ fp = fingerprint.Fingerprint(uart_id=2, tx=17, rx=16)
 
 # --- NETWORK FUNCTIONS ---
 client = None
+panic_mode = False
+
+def mqtt_callback(topic, msg_in):
+    global panic_mode
+    print(f">> MQTT Command: {topic} -> {msg_in}")
+    message = msg_in.decode('utf-8')
+    
+    if message == "OPEN_DOOR":
+        print(">> Remote Unlock")
+        msg("Remote Access", "Unlocked")
+        send_alert("OPEN", TOPIC_DOOR_STATUS)
+        # Success Tone
+        buzzer.freq(1500); buzzer.duty(512); time.sleep(0.1)
+        buzzer.freq(2500); time.sleep(0.2); buzzer.duty(0)
+        
+        led_green.value(1)
+        time.sleep(4)
+        led_green.value(0)
+        send_alert("CLOSED", TOPIC_DOOR_STATUS)
+        msg("SYSTEM ARMED", "Waiting...")
+        
+    elif message == "ALARM_ON":
+        print(">> PANIC MODE ACTIVATED")
+        panic_mode = True
+        
+    elif message == "ALARM_OFF":
+        print(">> PANIC MODE DEACTIVATED")
+        panic_mode = False
+        led_red.value(0)
+        buzzer.duty(0)
+        msg("SYSTEM ARMED", "Waiting...")
 
 def connect_wifi(timeout_ms=20000):
     wlan = network.WLAN(network.STA_IF)
@@ -85,7 +117,9 @@ def connect_mqtt():
         ssl_params = {'server_hostname': secrets.MQTT_SERVER} if ssl_enabled else {}
         print(f">> Connecting to MQTT Broker at {secrets.MQTT_SERVER}:{port}...")
         client = MQTTClient(client_id, secrets.MQTT_SERVER, port=port, ssl=ssl_enabled, ssl_params=ssl_params)
+        client.cb = mqtt_callback
         client.connect()
+        client.subscribe(TOPIC_COMMANDS)
         print(">> MQTT Connected to Broker")
         return True
     except Exception as e:
@@ -194,7 +228,7 @@ if in_setup_mode:
         enroll_master_finger()
     else:
         msg("ACCESS DENIED", "Wrong Password")
-        time.sleep(2)
+        time.sleep(4)
 
 msg("SYSTEM ARMED", "Waiting...")
 send_alert("System Armed") # <--- MQTT ALERT
@@ -207,6 +241,19 @@ except: pass
 
 # --- MAIN SECURITY LOOP ---
 while True:
+    if client:
+        try: client.check_msg()
+        except: pass
+        
+    if panic_mode:
+        led_red.value(not led_red.value())
+        buzzer.freq(500); buzzer.duty(50)
+        msg("PANIC MODE", "LOCKED")
+        time.sleep(0.1)
+        buzzer.duty(0)
+        time.sleep(0.1)
+        continue
+
     if pir.value() == 1:
         print(">> Motion Detected!")
         msg("Welcome", "Scan to enter...")
@@ -223,12 +270,18 @@ while True:
         
         # Scanning Window (10 seconds)
         while time.ticks_diff(time.ticks_ms(), start_scan) < 10000:
+            if client:
+                try: client.check_msg()
+                except: pass
+            if panic_mode: break
+
             if fp.get_image():
                 if fp.image2tz(1) and fp.search():
                     # --- MATCH FOUND ---
                     failed_attempts = 0 # <--- [NEW] Reset counter on success
                     msg("ACCESS GRANTED", "Welcome Master")
                     send_alert("Access Granted", TOPIC_ACCESS)
+                    send_alert("OPEN", TOPIC_DOOR_STATUS)
                     
                     # Acceptance Tone
                     buzzer.freq(1500); buzzer.duty(512); time.sleep(0.1)
@@ -237,6 +290,7 @@ while True:
                     led_green.value(1)
                     time.sleep(4)
                     led_green.value(0)
+                    send_alert("CLOSED", TOPIC_DOOR_STATUS)
                     led_yellow.value(0)
                     access = True
                     break
@@ -278,7 +332,12 @@ while True:
             
             time.sleep(0.01)
             
+        if panic_mode:
+            led_yellow.value(0)
+            continue
+
         if not access:
+            time.sleep(5)
             led_yellow.value(0)
             # Only show "System Locked" if we didn't just break out from Brute Force
             if failed_attempts < 3: 
