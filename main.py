@@ -1,5 +1,13 @@
 from machine import Pin, SoftI2C, unique_id, PWM
-import time, network, ubinascii
+import time, network, ubinascii, sys
+
+# Fix for missing 'ussl' module in newer MicroPython versions
+try:
+    import ussl
+except ImportError:
+    import ssl
+    sys.modules['ussl'] = ssl
+
 import lib.ssd1306 as ssd1306
 import lib.fingerprint as fingerprint
 from lib.mqtt import MQTTClient # Requires mqtt.py file
@@ -55,7 +63,7 @@ def connect_wifi(timeout_ms=20000):
     wlan.active(True)
     if not wlan.isconnected():
         print("Connecting to WiFi...", end="")
-        # USES SECRETS HERE
+        # USES SECRETS HERE 
         wlan.connect(secrets.WIFI_SSID, secrets.WIFI_PASS)
         start_time = time.ticks_ms()
         while not wlan.isconnected():
@@ -72,9 +80,11 @@ def connect_mqtt():
     try:
         client_id = ubinascii.hexlify(unique_id())
         # USES SECRETS HERE
-        port = getattr(secrets, 'MQTT_PORT', 1883)
+        port = getattr(secrets, 'MQTT_PORT', 8883)
+        ssl_enabled = getattr(secrets, 'MQTT_SSL', True)
+        ssl_params = {'server_hostname': secrets.MQTT_SERVER} if ssl_enabled else {}
         print(f">> Connecting to MQTT Broker at {secrets.MQTT_SERVER}:{port}...")
-        client = MQTTClient(client_id, secrets.MQTT_SERVER, port=port)
+        client = MQTTClient(client_id, secrets.MQTT_SERVER, port=port, ssl=ssl_enabled, ssl_params=ssl_params)
         client.connect()
         print(">> MQTT Connected to Broker")
         return True
