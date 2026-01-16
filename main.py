@@ -1,5 +1,5 @@
 from machine import Pin, SoftI2C, unique_id, PWM
-import time, network, ubinascii, sys, ntptime, ujson
+import time, network, ubinascii, sys, ntptime, ujson, gc, machine
 
 # Fix for missing 'ussl' module in newer MicroPython versions
 try:
@@ -170,6 +170,13 @@ def msg(line1, line2=""):
             if y > 0 and y < 16: y = 16
     oled.show()
 
+def health_check():
+    print("\n--- SYSTEM HEALTH CHECK ---")
+    print(f"CPU Freq: {machine.freq() / 1000000} MHz")
+    print(f"Mem Free: {gc.mem_free()} bytes")
+    print(f"Mem Alloc: {gc.mem_alloc()} bytes")
+    print("---------------------------\n")
+
 def enroll_master_finger():
     print(">> STARTING ENROLLMENT...")
     msg("SETUP MODE", "Place New Finger")
@@ -216,6 +223,7 @@ def enroll_master_finger():
         msg("Error", "No Match")
 
 # --- STARTUP SEQUENCE ---
+health_check()
 msg("System Booting", "Connecting Net...")
 if connect_wifi():
     try:
@@ -362,7 +370,7 @@ while True:
             continue
 
         if not access:
-            time.sleep(5)
+            time.sleep(10)
             led_yellow.value(0)
             # Only show "System Locked" if we didn't just break out from Brute Force
             if failed_attempts < 3: 
