@@ -1,2 +1,6 @@
 config/secrets.py
 config/hivemq.pem
+config/certificate.pem.crt
+config/private.pem.key
+config/AmazonRootCA.pem
+

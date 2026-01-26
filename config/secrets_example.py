@@ -10,9 +10,11 @@ MQTT_PORT = 8883
 MQTT_SSL = True
 
 # MQTT Certificate & Credentials
-MQTT_CERT = 'hivemq.pem'
-MQTT_USER = "YOUR_MQTT_USERNAME"
-MQTT_PASS = "YOUR_MQTT_PASSWORD"
+MQTT_CERT = 'AmazonRootCA.pem'   # CA Certificate (Required for AWS)
+MQTT_CLIENT_CERT = 'device.pem.crt' # Device Certificate (Required for AWS)
+MQTT_CLIENT_KEY = 'private.pem.key' # Device Private Key (Required for AWS)
+MQTT_USER = None # AWS often ignores User/Pass, but keep None or empty
+MQTT_PASS = None
 
 # Device Security
 SETUP_PASSWORD = "SET_UP_PASSWORD" # Password for Setup Mode

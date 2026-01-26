@@ -31,7 +31,7 @@ This system uses a **Defense-in-Depth** strategy, layering physical hardware sec
 
 ### 3. Network & Transport Layer
 * **Encrypted Communication:** MQTT traffic is secured using **SSL/TLS**. This prevents packet sniffing of critical commands (e.g., "OPEN_DOOR") on the local network.
-* **Certificate Validation:** The system verifies the identity of the MQTT broker using a CA certificate (`hivemq.pem`) to prevent Man-in-the-Middle (MitM) attacks.
+* **Certificate Validation:** The system verifies the identity of the MQTT broker using a CA certificate (`AmazonRootCA.pem`) to prevent Man-in-the-Middle (MitM) attacks.
 
 ### 4. Anti-Replay Mechanism
 To prevent an attacker from recording a valid "OPEN_DOOR" signal and replaying it later, the system enforces **Timestamp Validation**:
@@ -83,7 +83,9 @@ To prevent an attacker from recording a valid "OPEN_DOOR" signal and replaying i
 ├── main.py               # Main application logic
 ├── config/
 │   ├── secrets.py        # Credentials (Git ignored)
-│   └── hivemq.pem        # SSL Certificate authority
+│   ├── AmazonRootCA.pem  # SSL Certificate authority
+│   ├── device.pem.crt    # Device Certificate (AWS)
+│   └── private.pem.key   # Device Private Key (AWS)
 └── lib/
     ├── ssd1306.py        # OLED Driver
     ├── fingerprint.py    # Fingerprint Sensor Driver
@@ -93,20 +95,28 @@ To prevent an attacker from recording a valid "OPEN_DOOR" signal and replaying i
 ## ⚙️ Configuration
 ```config/secrets.py``` **Template:**
 ```python
-# Network Credentials
-WIFI_SSID = "YOUR_WIFI_NAME"
+# WiFi Credentials
+WIFI_SSID = "YOUR_WIFI_SSID"
 WIFI_PASS = "YOUR_WIFI_PASSWORD"
 
-# MQTT Configuration
-MQTT_SERVER = "broker.hivemq.com" 
+# MQTT Broker Configuration
+MQTT_SERVER = "your-endpoint.iot.region.amazonaws.com"
 MQTT_PORT = 8883
-MQTT_USER = "your_mqtt_user"
-MQTT_PASS = "your_mqtt_password"
-MQTT_SSL = True   
-MQTT_CERT = "hivemq.pem" # Filename in config/ folder
+MQTT_SSL = True
 
-# Admin Security
-SETUP_PASSWORD = "super_secret_admin_pass"
+# AWS Certificate Paths
+CERT_FILE = "/config/certificate.pem.crt"
+KEY_FILE = "/config/private.pem.key"
+# MQTT Certificate & Credentials
+MQTT_CERT = 'AmazonRootCA.pem'   # CA Certificate (Required for AWS)
+MQTT_CLIENT_CERT = 'device.pem.crt' # Device Certificate (Required for AWS)
+MQTT_CLIENT_KEY = 'private.pem.key' # Device Private Key (Required for AWS)
+MQTT_USER = None # AWS often ignores User/Pass, but keep None or empty
+MQTT_PASS = None
+
+# Device Security
+SETUP_PASSWORD = "SET_UP_PASSWORD" # Password for Setup Mode
+
 ```
 ## 🚀 Usage
 
@@ -168,7 +178,7 @@ This project includes a comprehensive Node-RED dashboard for real-time monitorin
 1.  **Install Node-RED:** Ensure you have Node-RED installed locally or on a VPS.
 2.  **Install Dashboard:** In Node-RED, go to "Manage Palette" and install `node-red-dashboard`.
 3.  **Import Flow:** Import the `flows.json` file provided in this repository.
-4.  **Configure MQTT:** Update the MQTT Broker node in the flow to point to your specific broker (e.g., HiveMQ) and port.
+4.  **Configure MQTT:** Update the MQTT Broker node in the flow to point to your AWS IoT Endpoint. Enable TLS and upload the required certificates (`AmazonRootCA.pem`, `device.pem.crt`, `private.pem.key`).
 5.  **Deploy:** Click "Deploy" and access the dashboard at `http://<YOUR_IP>:1880/ui`.
 
 ## 📡 MQTT Topics
@@ -195,4 +205,3 @@ To run this project, you need to upload the following libraries to the `/lib` di
 
 -  **`mqtt.py`** The lightweight MQTT client.  
   > **Note:** This is typically the standard `umqtt.simple` library. You must rename the file from `simple.py` to `mqtt.py` for the imports in `main.py` to work.
-

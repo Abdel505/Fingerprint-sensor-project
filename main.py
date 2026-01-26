@@ -132,10 +132,41 @@ def connect_mqtt():
         ssl_params = {} # Initialize SSL parameters dictionary
         if ssl_enabled:
             ssl_params['server_hostname'] = secrets.MQTT_SERVER # Set SNI (Server Name Indication)
-            cert_file = getattr(secrets, 'MQTT_CERT', 'hivemq.pem') # Get certificate filename
-            with open('config/' + cert_file, 'rb') as f: # Open certificate file from config folder
-                ssl_params['cadata'] = f.read() # Read certificate data for verification
-            print(f">> SSL: Loaded certificate '{cert_file}' ({len(ssl_params['cadata'])} bytes)")
+            cert_file = getattr(secrets, 'MQTT_CERT', 'certificate.pem.crt') # Get certificate filename
+            try:
+                with open('config/' + cert_file, 'rb') as f: # Open certificate file from config folder
+                    ssl_params['cadata'] = f.read() # Read certificate data for verification
+                print(f">> SSL: Loaded certificate '{cert_file}' ({len(ssl_params['cadata'])} bytes)")
+            except OSError:
+                print(f">> SSL ERROR: CA Certificate 'config/{cert_file}' not found.")
+                raise
+
+            # Client Certificate & Key (Mutual TLS)
+            client_cert = getattr(secrets, 'MQTT_CLIENT_CERT', None)
+            client_key = getattr(secrets, 'MQTT_CLIENT_KEY', None)
+            if client_cert and client_key:
+                try:
+                    with open('config/' + client_cert, 'rb') as f:
+                        ssl_params["cert"] = f.read()
+                except OSError:
+                    print(f">> SSL ERROR: Client Certificate 'config/{client_cert}' not found.")
+                    raise
+
+                try:
+                    with open('config/' + client_key, 'rb') as f:
+                        ssl_params["key"] = f.read()
+                except OSError:
+                    print(f">> SSL ERROR: Client Key 'config/{client_key}' not found.")
+                    raise
+
+                ssl_params["server_side"] = False
+                print(f">> SSL: Loaded Client Cert '{client_cert}' and Key")
+            else:
+                # AWS IoT specific check
+                if "amazonaws.com" in secrets.MQTT_SERVER:
+                    print(">> SSL ERROR: AWS IoT requires Mutual TLS (Client Cert + Key).")
+                    print(">> Please configure MQTT_CLIENT_CERT and MQTT_CLIENT_KEY in secrets.py")
+
         print(f">> Connecting to MQTT Broker at {secrets.MQTT_SERVER}:{port}...")
         user = getattr(secrets, 'MQTT_USER', None)
         password = getattr(secrets, 'MQTT_PASS', None)
@@ -152,8 +183,14 @@ def connect_mqtt():
 def send_alert(msg_text, topic=MQTT_TOPIC):
     if client:
         try:
-            client.publish(topic, msg_text)
-            print(f">> MQTT Sent: {msg_text}")
+            # Send JSON with Timestamp (ts) to prevent Replay Attacks
+            payload = ujson.dumps({
+                "device": ubinascii.hexlify(unique_id()).decode(),
+                "status": msg_text,
+                "ts": time.time() + 946684800
+            })
+            client.publish(topic, payload)
+            print(f">> MQTT Sent: {payload}")
         except:
             print(">> MQTT Error. Reconnecting...")
             connect_mqtt()
@@ -229,10 +266,15 @@ def enroll_master_finger():
 health_check()
 msg("System Booting", "Connecting Net...")
 if connect_wifi():
-    try:
-        ntptime.settime()
-        print(">> Time synchronized via NTP")
-    except:
+    print(">> Synchronizing time...")
+    for _ in range(3):
+        try:
+            ntptime.settime()
+            print(">> Time synchronized via NTP")
+            break
+        except:
+            time.sleep(1)
+    else:
         print(">> NTP Sync Failed")
     connect_mqtt()
     send_alert("System Booted")
@@ -282,7 +324,9 @@ while pir.value() == 1:
 while True:
     if client:
         try: client.check_msg()
-        except: pass
+        except OSError as e:
+            print(">> MQTT Connection Lost:", e)
+            client = None  # Force reconnection next time logic asks for it
         
     if panic_mode:
         led_red.value(not led_red.value())
@@ -339,7 +383,7 @@ while True:
                     print(f">> Failed Attempt: {failed_attempts}/3")
 
                     # [NEW] BRUTE FORCE PROTECTION CHECK
-                    if failed_attempts > 3:
+                    if failed_attempts > 2:
                         print(">> BRUTE FORCE LIMIT REACHED")
                         msg("SYSTEM LOCKED", "Limit Overpassed")
                         send_alert("limit overpassed", TOPIC_ACCESS) # <--- MQTT ALERT
