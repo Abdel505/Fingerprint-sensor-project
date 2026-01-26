@@ -9,6 +9,7 @@ except ImportError:
     sys.modules['ussl'] = ssl
 import lib.ssd1306 as ssd1306
 import lib.fingerprint as fingerprint
+import uhashlib
 from lib.mqtt import MQTTClient # Requires mqtt.py file
 from config import secrets  
 
@@ -296,9 +297,11 @@ if in_setup_mode:
     print("\n--- ENTER SETUP PASSWORD ---")
     time.sleep(1) 
     password_input = input("Password: ")
-    
-    # USES SECRETS HERE (No Hashing)
-    if password_input == secrets.SETUP_PASSWORD:
+
+    # Hash the input and compare it to the stored hash
+    hashed_input = ubinascii.hexlify(uhashlib.sha256(password_input.encode()).digest()).decode()
+
+    if hashed_input == secrets.SETUP_PASSWORD_HASH:
         print(">> Password Accepted.")
         msg("ACCESS GRANTED", "Wiping DB...")
         fp.empty_db()

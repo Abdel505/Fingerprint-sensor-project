@@ -41,7 +41,7 @@ To prevent an attacker from recording a valid "OPEN_DOOR" signal and replaying i
 ### 5. Setup Security
 * **Console Lock:** The enrollment menu is inaccessible via the physical interface alone. It requires:
     1.  Holding the physical **BOOT** button during startup.
-    2.  Entering a **Password** via the Serial/UART console (hashed in `secrets.py`).
+    2.  Entering a **Password** via the Serial/UART console, which is then hashed and compared against a stored hash in `secrets.py`.
 
 
 ## 🛠 Hardware Required
@@ -115,7 +115,7 @@ MQTT_USER = None # AWS often ignores User/Pass, but keep None or empty
 MQTT_PASS = None
 
 # Device Security
-SETUP_PASSWORD = "SET_UP_PASSWORD" # Password for Setup Mode
+SETUP_PASSWORD_HASH = "2f1b3754105485376249057c979341536acc7777548332168800343712051122" # SHA-256 hash of "SET_UP_PASSWORD"
 
 ```
 ## 🚀 Usage
